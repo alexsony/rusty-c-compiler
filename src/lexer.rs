@@ -1,10 +1,7 @@
 use regex::Regex;
 use std::collections::HashMap;
+use crate::errors::CompilerErrors;
 
-#[derive(Debug)]
-pub enum LexerError {
-    InvalidInput(String),
-}
 
 #[derive(Debug, Eq, Hash, PartialEq, Clone)]
 enum TokenType
@@ -36,7 +33,7 @@ impl Lexer
         Lexer { patterns: Lexer::create_patterns() }
     }
 
-    pub fn get_tokens(&self, input: &str) -> Result<Vec<Token>, LexerError>
+    pub fn get_tokens(&self, input: &str) -> Result<Vec<Token>, CompilerErrors>
     {
         let mut tokens:Vec<Token> = Vec::new();
         let mut unknown_tokens:Vec<Token> = Vec::new();
@@ -118,7 +115,7 @@ impl Lexer
         regexes
     }
 
-    fn validate_tokens(&self, unknown_tokens: &Vec<Token>) -> Result<(), LexerError>
+    fn validate_tokens(&self, unknown_tokens: &Vec<Token>) -> Result<(), CompilerErrors>
     {
         if !unknown_tokens.is_empty()
         {
@@ -126,9 +123,41 @@ impl Lexer
             {
                 println!("{:?}", token);
             }
-            return Err(LexerError::InvalidInput("Wrong character used!".into()));
+            return Err(CompilerErrors::LexerError("Wrong character used!".into()));
         }
 
         Ok(())
     }
 }
+
+// #[cfg(test)]
+// mod tests
+// {
+//     use super::*;
+//     use lazy_static::lazy_static;
+
+//     lazy_static! 
+//     {
+//         static ref LEXER: Lexer = Lexer::new();
+//     }
+
+//     fn read_file(file_path: &str) -> String 
+//     {
+//         let mut file = File::open(file_path).unwrap(); 
+//         let mut content = String::new();
+//         file.read_to_string(&mut content).unwrap();  
+
+//         content
+//     }
+
+//     #[test]
+//     fn test_valid_filles()
+//     {
+//         let input = "int main(void) {
+//                             return 0;
+//                             }";
+
+//         let tokens = LEXER.get_tokens(input).unwrap();
+//         assert!(!tokens.is_empty());
+//     }
+// }
