@@ -9,3 +9,8 @@ cargo build
 ```
 cargo run
 ```
+
+## Run UnitTests
+```
+cargo test
+```

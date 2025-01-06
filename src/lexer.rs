@@ -2,6 +2,9 @@ use regex::Regex;
 use std::collections::HashMap;
 use crate::errors::CompilerErrors;
 
+const KEYWORDS: [&str; 4] = ["main", "void", "int", "return"];
+const DELIMITERS: [&str; 5] = ["{", "}", "(", ")", ";"];
+const OPERATORS: [&str; 4] = ["+", "-", ":", "/"];
 
 #[derive(Debug, Eq, Hash, PartialEq, Clone)]
 enum TokenType
@@ -99,7 +102,9 @@ impl Lexer
             (TokenType::Symbol(")".to_string()), r"\)"),
             (TokenType::Symbol("{".to_string()), r"\{"),
             (TokenType::Symbol("}".to_string()), r"\}"),
+            (TokenType::Symbol("/".to_string()), r"\/"),
             (TokenType::Symbol(";".to_string()), r";"),
+            (TokenType::Symbol("-".to_string()), r"-"),
         ];
 
         for (token_type, pattern) in patterns_to_add
@@ -130,34 +135,29 @@ impl Lexer
     }
 }
 
-// #[cfg(test)]
-// mod tests
-// {
-//     use super::*;
-//     use lazy_static::lazy_static;
+#[cfg(test)]
+mod tests
+{
+    use crate::helper_functions;
 
-//     lazy_static! 
-//     {
-//         static ref LEXER: Lexer = Lexer::new();
-//     }
+    use super::*;
+    use lazy_static::lazy_static;
 
-//     fn read_file(file_path: &str) -> String 
-//     {
-//         let mut file = File::open(file_path).unwrap(); 
-//         let mut content = String::new();
-//         file.read_to_string(&mut content).unwrap();  
+    lazy_static! 
+    {
+        static ref LEXER: Lexer = Lexer::new();
+    }
 
-//         content
-//     }
+    #[test]
+    fn test_valid_filles() -> Result<(), CompilerErrors>
+    {
+        let files = helper_functions::read_files("test_files/lexer/valid")?;
 
-//     #[test]
-//     fn test_valid_filles()
-//     {
-//         let input = "int main(void) {
-//                             return 0;
-//                             }";
-
-//         let tokens = LEXER.get_tokens(input).unwrap();
-//         assert!(!tokens.is_empty());
-//     }
-// }
+        for file in files
+        {
+            let tokens = LEXER.get_tokens(&file).unwrap();
+            assert!(!tokens.is_empty());
+        }
+        Ok(())
+    }
+}

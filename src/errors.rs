@@ -4,7 +4,7 @@ use std::io;
 #[derive(Debug)]
 pub enum CompilerErrors
 {
-    IOError(io::Error),
+    IOError(String),
     LexerError(String)
 }
 
@@ -14,7 +14,7 @@ impl fmt::Display for CompilerErrors
     {
         match *self
         {
-            CompilerErrors::IOError(ref err) => write!(f, "I/O Error: {}", err),
+            CompilerErrors::IOError(ref msg) => write!(f, "I/O Error: {}", msg),
             CompilerErrors::LexerError(ref msg) => write!(f, "Lexer error: {}", msg)
         }
     }
@@ -24,7 +24,7 @@ impl From<io::Error> for CompilerErrors
 {
     fn from(err: io::Error) -> CompilerErrors 
     {
-        CompilerErrors::IOError(err)
+        CompilerErrors::IOError(err.to_string())
     }
 }
 
