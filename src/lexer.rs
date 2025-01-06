@@ -1,5 +1,5 @@
 use regex::Regex;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 use crate::errors::CompilerErrors;
 
 const KEYWORDS: [&str; 4] = ["main", "void", "int", "return"];
@@ -9,10 +9,11 @@ const OPERATORS: [&str; 4] = ["+", "-", ":", "/"];
 #[derive(Debug, Eq, Hash, PartialEq, Clone)]
 enum TokenType
 {
+    Keyword,
     Identifier,
     Constant,
-    Keyword(String),
-    Symbol(String),
+    Operator(String),
+    Delimiter(String),
     Unknown,
 }
 
@@ -53,7 +54,7 @@ impl Lexer
                     Some(match_value) if match_value.start() == 0 =>
                     {
                         tokens.push(Token {
-                            token_type: token_type.clone(),
+                            token_type: Lexer::is_keyword(match_value.as_str().to_string(), token_type.clone()),
                             value: match_value.as_str().to_string(),
                             position: position,
                         });
@@ -91,21 +92,22 @@ impl Lexer
     fn create_patterns() -> HashMap<TokenType, Regex>
     {
         let mut regexes: HashMap<TokenType, Regex> = HashMap::new();
-        
-        let patterns_to_add = vec![
-            (TokenType::Identifier, r"[a-zA-Z_]\w*"),
-            (TokenType::Constant, r"\b\d+\b"),
-            (TokenType::Keyword("int".to_string()), r"int\b"),
-            (TokenType::Keyword("void".to_string()), r"void\b"),
-            (TokenType::Keyword("return".to_string()), r"return\b"),
-            (TokenType::Symbol("(".to_string()), r"\("),
-            (TokenType::Symbol(")".to_string()), r"\)"),
-            (TokenType::Symbol("{".to_string()), r"\{"),
-            (TokenType::Symbol("}".to_string()), r"\}"),
-            (TokenType::Symbol("/".to_string()), r"\/"),
-            (TokenType::Symbol(";".to_string()), r";"),
-            (TokenType::Symbol("-".to_string()), r"-"),
-        ];
+        let mut patterns_to_add: Vec<(TokenType, String)> = Vec::new();
+
+        patterns_to_add.push((TokenType::Constant, r"\b\d+\b".into()));
+        patterns_to_add.push((TokenType::Identifier, r"[a-zA-Z_]\w*".into()));
+
+        for operator in OPERATORS
+        {
+            let regex_value = format!(r"{}", regex::escape(operator));
+            patterns_to_add.push((TokenType::Operator(operator.to_string()), regex_value));
+        }
+
+        for delimiter in DELIMITERS
+        {
+            let regex_value = format!(r"{}", regex::escape(delimiter));
+            patterns_to_add.push((TokenType::Delimiter(delimiter.to_string()), regex_value));
+        }
 
         for (token_type, pattern) in patterns_to_add
         {
@@ -133,6 +135,22 @@ impl Lexer
 
         Ok(())
     }
+
+    fn is_keyword(found_value: String, found_token_type: TokenType) -> TokenType
+    {
+        if found_token_type != TokenType::Identifier 
+        {
+            return found_token_type;
+        }
+
+        let check_value = found_value.trim_end_matches(r"\b");
+        if KEYWORDS.contains(&check_value)
+        {
+            return TokenType::Keyword;
+        }
+
+        return TokenType::Identifier;
+    }
 }
 
 #[cfg(test)]
@@ -149,7 +167,7 @@ mod tests
     }
 
     #[test]
-    fn test_valid_filles() -> Result<(), CompilerErrors>
+    fn test_valid_files() -> Result<(), CompilerErrors>
     {
         let files = helper_functions::read_files("test_files/lexer/valid")?;
 
